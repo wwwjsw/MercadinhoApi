@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Mercado</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-green-600 mb-2">
+                <i class="fas fa-shopping-cart mr-3"></i>Mercado CRUD
+            </h1>
+            <p class="text-gray-600">Gerenciamento de itens do mercado</p>
+        </header>
+
+        <!-- Alert Messages -->
+        <div id="alertContainer" class="fixed top-4 right-4 z-50 max-w-sm w-full"></div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Section -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-lg p-6 sticky top-4">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800" id="formTitle">
+                        <i class="fas fa-plus-circle mr-2"></i>Adicionar Item
+                    </h2>
+                    
+                    <form id="itemForm" class="space-y-4">
+                        <input type="hidden" id="itemId">
+                        
+                        <div>
+                            <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-tag mr-1"></i>Nome do Item
+                            </label>
+                            <input type="text" id="nome" name="nome" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="Ex: Maçã, Arroz, Leite...">
+                        </div>
+
+                        <div>
+                            <label for="categoria" class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-list mr-1"></i>Categoria
+                            </label>
+                            <select id="categoria" name="categoria" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option value="">Selecione uma categoria</option>
+                                <option value="Frutas">Frutas</option>
+                                <option value="Verduras">Verduras</option>
+                                <option value="Laticínios">Laticínios</option>
+                                <option value="Carnes">Carnes</option>
+                                <option value="Grãos">Grãos</option>
+                                <option value="Bebidas">Bebidas</option>
+                                <option value="Limpeza">Limpeza</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="preco" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-dollar-sign mr-1"></i>Preço (R$)
+                                </label>
+                                <input type="number" id="preco" name="preco" step="0.01" min="0" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    placeholder="0.00">
+                            </div>
+
+                            <div>
+                                <label for="quantidade" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-boxes mr-1"></i>Quantidade
+                                </label>
+                                <input type="number" id="quantidade" name="quantidade" min="0" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" id="submitBtn"
+                                class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-200">
+                                <i class="fas fa-save mr-2"></i>
+                                <span id="submitText">Adicionar Item</span>
+                            </button>
+                            
+                            <button type="button" id="cancelBtn" style="display: none;"
+                                class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200">
+                                <i class="fas fa-times mr-2"></i>Cancelar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Stats -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                            <i class="fas fa-chart-bar mr-2"></i>Estatísticas
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-blue-50 rounded-lg p-3">
+                                <div class="text-2xl font-bold text-blue-600" id="totalItens">0</div>
+                                <div class="text-sm text-blue-500">Total Itens</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-2xl font-bold text-green-600" id="totalValor">R$ 0,00</div>
+                                <div class="text-sm text-green-500">Valor Total</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Section -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">
+                            <i class="fas fa-list mr-2"></i>Lista de Itens
+                        </h2>
+                        <button id="refreshBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200">
+                            <i class="fas fa-sync-alt mr-2"></i>Atualizar
+                        </button>
+                    </div>
+
+                    <!-- Search and Filter -->
+                    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <input type="text" id="searchInput" placeholder="Buscar itens..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <select id="categoryFilter"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Todas as categorias</option>
+                                <option value="Frutas">Frutas</option>
+                                <option value="Verduras">Verduras</option>
+                                <option value="Laticínios">Laticínios</option>
+                                <option value="Carnes">Carnes</option>
+                                <option value="Grãos">Grãos</option>
+                                <option value="Bebidas">Bebidas</option>
+                                <option value="Limpeza">Limpeza</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="loading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+                        <p class="mt-2 text-gray-600">Carregando itens...</p>
+                    </div>
+
+                    <!-- Items Table -->
+                    <div id="itemsContainer" class="overflow-hidden rounded-lg border border-gray-200" style="display: none;">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTable" class="bg-white divide-y divide-gray-200">
+                                <!-- Itens serão inseridos aqui via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="text-center py-12" style="display: none;">
+                        <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum item encontrado</h3>
+                        <p class="text-gray-500 mb-4">Adicione seu primeiro item usando o formulário ao lado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da API
+        const API_BASE_URL = 'http://localhost:5000/api/itensmercado';
+
+        // Elementos DOM
+        const elements = {
+            form: $('#itemForm'),
+            itemsTable: $('#itemsTable'),
+            loading: $('#loading'),
+            itemsContainer: $('#itemsContainer'),
+            emptyState: $('#emptyState'),
+            alertContainer: $('#alertContainer'),
+            refreshBtn: $('#refreshBtn'),
+            searchInput: $('#searchInput'),
+            categoryFilter: $('#categoryFilter'),
+            cancelBtn: $('#cancelBtn'),
+            formTitle: $('#formTitle'),
+            submitBtn: $('#submitBtn'),
+            submitText: $('#submitText'),
+            totalItens: $('#totalItens'),
+            totalValor: $('#totalValor')
+        };
+
+        // Estado da aplicação
+        let items = [];
+        let isEditing = false;
+
+        // Funções de utilidade
+        const utils = {
+            showAlert(message, type = 'info') {
+                const types = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    warning: 'bg-yellow-500',
+                    info: 'bg-blue-500'
+                };
+
+                const alert = $(`
+                    <div class="fade-in ${types[type]} text-white p-4 rounded-lg shadow-lg">
+                        <div class="flex justify-between items-center">
+                            <span>${message}</span>
+                            <button class="ml-4 text-white hover:text-gray-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `);
+
+                alert.find('button').click(() => alert.remove());
+                elements.alertContainer.append(alert);
+
+                setTimeout(() => alert.remove(), 5000);
+            },
+
+            formatCurrency(value) {
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(value);
+            },
+
+            formatDate(dateString) {
+                return new Date(dateString).toLocaleDateString('pt-BR');
+            }
+        };
+
+        // Funções da API
+        const api = {
+            async request(url, options = {}) {
+                try {
+                    const response = await $.ajax({
+                        url: `${API_BASE_URL}${url}`,
+                        type: options.method || 'GET',
+                        data: options.body ? JSON.stringify(options.body) : undefined,
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        beforeSend: () => $('body').addClass('loading')
+                    });
+                    
+                    $('body').removeClass('loading');
+                    return response;
+                } catch (error) {
+                    $('body').removeClass('loading');
+                    utils.showAlert(`Erro: ${error.responseJSON?.message || error.statusText || 'Erro desconhecido'}`, 'error');
+                    throw error;
+                }
+            },
+
+            async getAll() {
+                return await this.request('');
+            },
+
+            async getById(id) {
+                return await this.request(`/${id}`);
+            },
+
+            async create(item) {
+                return await this.request('', {
+                    method: 'POST',
+                    body: item
+                });
+            },
+
+            async update(id, item) {
+                return await this.request(`/${id}`, {
+                    method: 'PUT',
+                    body: item
+                });
+            },
+
+            async delete(id) {
+                return await this.request(`/${id}`, {
+                    method: 'DELETE'
+                });
+            }
+        };
+
+        // Funções de UI
+        const ui = {
+            showLoading() {
+                elements.loading.show();
+                elements.itemsContainer.hide();
+                elements.emptyState.hide();
+            },
+
+            hideLoading() {
+                elements.loading.hide();
+            },
+
+            renderItems(itemsToRender = items) {
+                elements.itemsTable.empty();
+
+                if (itemsToRender.length === 0) {
+                    elements.itemsContainer.hide();
+                    elements.emptyState.show();
+                    return;
+                }
+
+                elements.emptyState.hide();
+                elements.itemsContainer.show();
+
+                itemsToRender.forEach(item => {
+                    const row = $(`
+                        <tr class="hover:bg-gray-50 fade-in">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">${item.nome}</div>
+                                        <div class="text-sm text-gray-500">Criado em ${utils.formatDate(item.dataCriacao)}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    ${item.categoria}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                ${utils.formatCurrency(item.preco)}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <span class="px-2 py-1 bg-gray-100 rounded">${item.quantidade}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button class="edit-btn text-indigo-600 hover:text-indigo-900 mr-3" data-id="${item.id}">
+                                    <i class="fas fa-edit mr-1"></i>Editar
+                                </button>
+                                <button class="delete-btn text-red-600 hover:text-red-900" data-id="${item.id}">
+                                    <i class="fas fa-trash mr-1"></i>Excluir
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+
+                    elements.itemsTable.append(row);
+                });
+
+                // Atualizar estatísticas
+                this.updateStats(itemsToRender);
+            },
+
+            updateStats(itemsToCalculate = items) {
+                const totalItens = itemsToCalculate.length;
+                const totalValor = itemsToCalculate.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
+
+                elements.totalItens.text(totalItens);
+                elements.totalValor.text(utils.formatCurrency(totalValor));
+            },
+
+            resetForm() {
+                elements.form[0].reset();
+                $('#itemId').val('');
+                isEditing = false;
+                elements.cancelBtn.hide();
+                elements.formTitle.html('<i class="fas fa-plus-circle mr-2"></i>Adicionar Item');
+                elements.submitText.text('Adicionar Item');
+                elements.submitBtn.removeClass('bg-yellow-500 hover:bg-yellow-600').addClass('bg-green-600 hover:bg-green-700');
+            },
+
+            populateForm(item) {
+                $('#itemId').val(item.id);
+                $('#nome').val(item.nome);
+                $('#categoria').val(item.categoria);
+                $('#preco').val(item.preco);
+                $('#quantidade').val(item.quantidade);
+
+                isEditing = true;
+                elements.cancelBtn.show();
+                elements.formTitle.html('<i class="fas fa-edit mr-2"></i>Editar Item');
+                elements.submitText.text('Atualizar Item');
+                elements.submitBtn.removeClass('bg-green-600 hover:bg-green-700').addClass('bg-yellow-500 hover:bg-yellow-600');
+            },
+
+            filterItems() {
+                const searchTerm = elements.searchInput.val().toLowerCase();
+                const categoryFilter = elements.categoryFilter.val();
+
+                const filtered = items.filter(item => {
+                    const matchesSearch = item.nome.toLowerCase().includes(searchTerm);
+                    const matchesCategory = !categoryFilter || item.categoria === categoryFilter;
+                    return matchesSearch && matchesCategory;
+                });
+
+                this.renderItems(filtered);
+            }
+        };
+
+        // Event Handlers
+        const handlers = {
+            async loadItems() {
+                try {
+                    ui.showLoading();
+                    items = await api.getAll();
+                    ui.renderItems();
+                    utils.showAlert('Itens carregados com sucesso!', 'success');
+                } catch (error) {
+                    utils.showAlert('Erro ao carregar itens', 'error');
+                } finally {
+                    ui.hideLoading();
+                }
+            },
+
+            async handleSubmit(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    nome: $('#nome').val(),
+                    categoria: $('#categoria').val(),
+                    preco: parseFloat($('#preco').val()),
+                    quantidade: parseInt($('#quantidade').val())
+                };
+
+                try {
+                    if (isEditing) {
+                        const id = $('#itemId').val();
+                        await api.update(id, formData);
+                        utils.showAlert('Item atualizado com sucesso!', 'success');
+                    } else {
+                        await api.create(formData);
+                        utils.showAlert('Item criado com sucesso!', 'success');
+                    }
+
+                    ui.resetForm();
+                    await this.loadItems();
+                } catch (error) {
+                    // Erro já é tratado na função api.request
+                }
+            },
+
+            async handleEdit(itemId) {
+                try {
+                    const item = await api.getById(itemId);
+                    ui.populateForm(item);
+                    $('html, body').animate({
+                        scrollTop: elements.form.offset().top - 20
+                    }, 500);
+                } catch (error) {
+                    // Erro já é tratado na função api.request
+                }
+            },
+
+            async handleDelete(itemId) {
+                if (!confirm('Tem certeza que deseja excluir este item?')) {
+                    return;
+                }
+
+                try {
+                    await api.delete(itemId);
+                    utils.showAlert('Item excluído com sucesso!', 'success');
+                    await this.loadItems();
+                } catch (error) {
+                    // Erro já é tratado na função api.request
+                }
+            }
+        };
+
+        // Event Listeners
+        $(document).ready(function() {
+            // Carregar itens iniciais
+            handlers.loadItems();
+
+            // Form submit
+            elements.form.on('submit', (e) => handlers.handleSubmit(e));
+
+            // Cancel edit
+            elements.cancelBtn.on('click', () => ui.resetForm());
+
+            // Refresh button
+            elements.refreshBtn.on('click', () => handlers.loadItems());
+
+            // Search and filter
+            elements.searchInput.on('input', () => ui.filterItems());
+            elements.categoryFilter.on('change', () => ui.filterItems());
+
+            // Delegated events for dynamic elements
+            elements.itemsTable.on('click', '.edit-btn', function() {
+                const itemId = $(this).data('id');
+                handlers.handleEdit(itemId);
+            });
+
+            elements.itemsTable.on('click', '.delete-btn', function() {
+                const itemId = $(this).data('id');
+                handlers.handleDelete(itemId);
+            });
+
+            // Enter key para buscar
+            elements.searchInput.on('keypress', function(e) {
+                if (e.which === 13) {
+                    ui.filterItems();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
